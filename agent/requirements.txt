@@ -1,0 +1,8 @@
+python-dotenv==1.0.1
+numpy==2.0.1
+
+# LiveKit Agents + plugins as optional deps
+livekit-agents[openai,silero]~=1.2
+
+# Local STT
+faster-whisper==1.0.3
