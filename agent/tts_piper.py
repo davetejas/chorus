@@ -9,24 +9,28 @@ import wave
 
 import numpy as np
 from livekit import rtc
-from livekit.agents.tts import TTS, TTSCapabilities, ChunkedStream, SynthesizedAudioEmitter
+from livekit.agents.tts import TTS, TTSCapabilities, ChunkedStream, AudioEmitter
 
 
 class _PiperChunkedStream(ChunkedStream):
-    async def _run(self) -> None:
-        request_id = str(uuid.uuid4())
-        emitter = SynthesizedAudioEmitter(event_ch=self._event_ch, request_id=request_id)
-
+    async def _run(self, output_emitter: AudioEmitter) -> None:
         wav_path = await asyncio.to_thread(self._tts._synthesize_to_wav, self.input_text)
 
         try:
             frames = await asyncio.to_thread(self._tts._wav_to_frames_48k_mono, wav_path)
 
+            output_emitter.initialize(
+                request_id=str(uuid.uuid4()),
+                sample_rate=48000,
+                num_channels=1,
+                mime_type="audio/raw",
+            )
+
             # Emit ~20ms chunks for low-latency playout
             for fr in frames:
-                emitter.push(fr)
+                output_emitter.push(fr.data)
 
-            emitter.flush()
+            output_emitter.flush()
         finally:
             try:
                 os.remove(wav_path)
