@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import sys
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -46,11 +47,11 @@ class TestMakeAgentToken:
 
 class TestOnboardAI:
     def test_instantiates_without_error(self):
-        agent = OnboardAI()
+        agent = OnboardAI(room=MagicMock())
         assert agent is not None
 
     def test_instructions_contain_required_onboarding_sections(self):
-        agent = OnboardAI()
+        agent = OnboardAI(room=MagicMock())
         instructions = agent.instructions
         assert "OnboardAI" in instructions
         assert "Identity Validation" in instructions

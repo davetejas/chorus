@@ -11,6 +11,7 @@ import {
 import { Track } from 'livekit-client';
 import { TranscriptPanel } from './TranscriptPanel';
 import { ChatPanel } from './ChatPanel';
+import { ProfileViewer } from './ProfileViewer';
 
 function VideoArea() {
   const tracks = useTracks(
@@ -46,6 +47,7 @@ export function OnboardRoom(props: {
     >
       <StartAudio label="Click to enable audio" />
       <RoomAudioRenderer />
+      <ProfileViewer />
 
       <div className="container">
         <div className="row">
