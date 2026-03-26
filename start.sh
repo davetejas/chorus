@@ -11,7 +11,6 @@ docker compose -f "$REPO_ROOT/docker-compose.yml" up --build -d
 echo ""
 echo "All services running."
 echo "  Frontend:  http://localhost:5173"
-echo "  Backend:   http://localhost:8000"
 echo "  LiveKit:   ws://localhost:7880"
 echo ""
 echo "To stop: docker compose down"
