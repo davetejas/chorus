@@ -5,6 +5,9 @@ set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Prefer Python 3.13; many packages lack 3.14 wheels yet
+PYTHON=$(command -v python3.13 || command -v python3.12 || command -v python3.11 || command -v python3)
+
 # ── 1. LiveKit ────────────────────────────────────────────────────────────────
 echo "[1/4] Starting LiveKit..."
 docker compose -f "$REPO_ROOT/docker-compose.yml" up -d
@@ -14,7 +17,7 @@ echo "      LiveKit ready on ws://localhost:7880"
 echo "[2/4] Starting backend..."
 cd "$REPO_ROOT/backend"
 [ -f .env ] || cp .env.example .env
-[ -d .venv ] || python3 -m venv .venv
+[ -d .venv ] || $PYTHON -m venv .venv
 .venv/bin/pip install -q -r requirements.txt
 .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
@@ -24,7 +27,7 @@ echo "      Backend PID $BACKEND_PID on http://localhost:8000"
 echo "[3/4] Starting agent..."
 cd "$REPO_ROOT/agent"
 [ -f .env ] || cp .env.example .env
-[ -d .venv ] || python3 -m venv .venv
+[ -d .venv ] || $PYTHON -m venv .venv
 .venv/bin/pip install -q -r requirements.txt
 .venv/bin/python run_agent.py &
 AGENT_PID=$!
