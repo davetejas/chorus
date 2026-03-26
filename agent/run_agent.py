@@ -1,6 +1,8 @@
 import asyncio
 import datetime
+import json
 import os
+import urllib.request
 
 from dotenv import load_dotenv
 
@@ -145,6 +147,25 @@ def make_agent_token(room: str, identity: str, name: str) -> str:
     )
 
 
+async def _check_ollama(base_url: str, model: str) -> None:
+    """Warn early if Ollama is unreachable or the required model isn't pulled."""
+    api_base = base_url.rstrip("/")
+    if api_base.endswith("/v1"):
+        api_base = api_base[:-3]
+    try:
+        with urllib.request.urlopen(f"{api_base}/api/tags", timeout=5) as resp:
+            data = json.loads(resp.read())
+        names = [m["name"].split(":")[0] for m in data.get("models", [])]
+        if model.split(":")[0] not in names:
+            print(f"[agent] WARNING: Ollama model '{model}' not found. Available: {names or '(none)'}")
+            print(f"[agent]   Run: ollama pull {model}")
+        else:
+            print(f"[agent] Ollama OK — model '{model}' is available")
+    except OSError as e:
+        print(f"[agent] WARNING: Cannot reach Ollama at {api_base}: {e}")
+        print(f"[agent]   Start Ollama with: ollama serve")
+
+
 async def main():
     load_dotenv()
 
@@ -168,6 +189,8 @@ async def main():
     @room.on("disconnected")
     def _():
         disconnected.set()
+
+    await _check_ollama(ollama_base_url, ollama_model)
 
     print(f"[agent] connecting to room={room_name} as {identity} ...")
     await room.connect(livekit_url, token)
