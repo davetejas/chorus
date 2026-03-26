@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Join } from './Join';
-import { fetchToken } from './api';
-import { InterviewRoom } from './InterviewRoom';
+import { generateToken } from './api';
+import { OnboardRoom } from './OnboardRoom';
 
 export default function App() {
   const [room, setRoom] = useState('demo');
-  const [name, setName] = useState('Candidate');
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -16,7 +16,7 @@ export default function App() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetchToken(room, name);
+      const res = await generateToken(room, name, name);
       setToken(res.token);
       setServerUrl(res.url);
     } catch (e: any) {
@@ -41,7 +41,7 @@ export default function App() {
   }
 
   return (
-    <InterviewRoom
+    <OnboardRoom
       token={token}
       serverUrl={serverUrl}
       onLeave={() => {
@@ -51,3 +51,4 @@ export default function App() {
     />
   );
 }
+

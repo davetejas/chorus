@@ -17,7 +17,6 @@ export function TranscriptPanel() {
     let disposed = false;
 
     // LiveKit text streams: receive lk.transcription topic
-    // Docs show registerTextStreamHandler('lk.transcription', async (reader, participantInfo) => ...) citeturn41view3turn40view1
     const handler = async (reader: any, participantInfo: any) => {
       try {
         const message = await reader.readAll();

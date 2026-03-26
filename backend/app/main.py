@@ -19,7 +19,7 @@ LIVEKIT_API_SECRET = os.getenv("LIVEKIT_API_SECRET", "")
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
 
-app = FastAPI(title="AI Interview POC Token Service")
+app = FastAPI(title="OnboardAI Token Service")
 
 app.add_middleware(
     CORSMiddleware,
