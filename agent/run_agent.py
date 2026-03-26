@@ -126,14 +126,39 @@ async def main():
         ),
     )
 
-    await session.generate_reply(
-        instructions=(
-            "Greet the user warmly by name if known, otherwise introduce yourself as OnboardAI. "
-            "Explain that you'll guide them through a quick onboarding: first a photo for identity verification, "
-            "then collecting their profile details, and finally setting up their time-limited access. "
-            "Ask for their consent to begin and invite them to look at the camera when ready."
-        )
-    )
+    # Greet the first human participant to join — not at startup.
+    # The agent may start before anyone is in the room, so we defer
+    # the greeting until a real participant is present.
+    greeted = False
+
+    async def greet_user():
+        nonlocal greeted
+        if greeted:
+            return
+        greeted = True
+        print("[agent] participant joined — sending greeting")
+        try:
+            await session.generate_reply(
+                instructions=(
+                    "Greet the user warmly by name if known, otherwise introduce yourself as OnboardAI. "
+                    "Explain that you'll guide them through a quick onboarding: first a photo for identity verification, "
+                    "then collecting their profile details, and finally setting up their time-limited access. "
+                    "Ask for their consent to begin and invite them to look at the camera when ready."
+                )
+            )
+        except Exception as e:
+            print(f"[agent] greeting failed: {e}")
+
+    @room.on("participant_connected")
+    def on_participant_connected(participant):
+        if participant.identity != identity:
+            asyncio.ensure_future(greet_user())
+
+    # Handle case where user joined before the agent finished starting up
+    for p in room.remote_participants.values():
+        if p.identity != identity:
+            asyncio.ensure_future(greet_user())
+            break
 
     print("[agent] running. Disconnect the room to stop.")
     await disconnected.wait()
