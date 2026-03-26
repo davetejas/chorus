@@ -64,15 +64,39 @@ Candidate browser
 
 ## Quick Start
 
-### 1. Start LiveKit
+### Steps 1–3: LiveKit + Backend + Agent (automated)
+
+```bash
+./start.sh
+```
+
+[start.sh](start.sh) handles first-time setup (creates venvs, installs deps, copies `.env` files) and starts all three services in the background.
+
+### Step 4: Frontend
+
+```bash
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173), enter a name and room name, and click **Join**.
+
+---
+
+### Manual setup (steps 1–3)
+
+<details>
+<summary>Expand if you prefer to run each service individually</summary>
+
+#### 1. Start LiveKit
 
 ```bash
 docker-compose up -d
 ```
 
-LiveKit will be available at `ws://localhost:7880`.
-
-### 2. Start the Backend
+#### 2. Start the Backend
 
 ```bash
 cd backend
@@ -83,7 +107,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Start the Agent
+#### 3. Start the Agent
 
 ```bash
 cd agent
@@ -94,16 +118,7 @@ pip install -r requirements.txt
 python run_agent.py
 ```
 
-### 4. Start the Frontend
-
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173), enter a name and room name, and click **Join**.
+</details>
 
 ---
 
