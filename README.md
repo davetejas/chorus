@@ -8,22 +8,16 @@ An AI-powered video onboarding platform. A user joins a video room and is guided
 
 ## Overview
 
-Chorus orchestrates three services around a LiveKit real-time video server:
+Chorus orchestrates two services around a LiveKit real-time video server:
 
-- **Frontend** — React/TypeScript SPA where users join a named room and see a live transcript
-- **Backend** — Minimal FastAPI service that issues LiveKit access tokens
+- **Frontend** — React/TypeScript SPA where users join a named room and see a live transcript; generates LiveKit JWTs directly in the browser
 - **Agent** — Python process (OnboardAI) that joins the same room and conducts the onboarding session using local STT, LLM, and TTS models
 
 ```
 User browser
       │  WebRTC (audio/video)
+      │  JWT generated in-browser (crypto.subtle)
       ▼
-┌─────────────┐   token request   ┌──────────────┐
-│  Frontend   │ ────────────────► │   Backend    │
-│  React/TS   │                   │   FastAPI    │
-└─────────────┘                   └──────────────┘
-      │  WebRTC                         │ LiveKit SDK
-      ▼                                 ▼
 ┌──────────────────────────────────────────────────┐
 │               LiveKit Server (Docker)            │
 └──────────────────────────────────────────────────┘
@@ -45,7 +39,6 @@ User browser
 | Component | Technology |
 |-----------|-----------|
 | Frontend | React 18, TypeScript, Vite, `@livekit/components-react` |
-| Backend | Python, FastAPI, `livekit-api` |
 | Agent | Python, `livekit-agents`, faster-whisper, Piper TTS, Silero VAD |
 | Infrastructure | LiveKit server, Docker Compose |
 
@@ -85,7 +78,7 @@ docker compose down
 ## How It Works
 
 1. The user enters their name and a room name in the frontend and clicks **Start onboarding**.
-2. The frontend calls `POST /api/token` on the backend to get a short-lived LiveKit JWT.
+2. The frontend generates a short-lived LiveKit JWT locally using `crypto.subtle` (no backend required).
 3. The frontend connects to LiveKit and publishes the user's audio/video.
 4. The OnboardAI agent (already running) detects the new participant and joins the same room.
 5. The agent pipeline runs continuously:
@@ -102,15 +95,6 @@ docker compose down
 ---
 
 ## Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit WebSocket URL |
-| `LIVEKIT_API_KEY` | `devkey` | LiveKit API key |
-| `LIVEKIT_API_SECRET` | `devsecret` | LiveKit API secret |
-| `CORS_ORIGINS` | `http://localhost:5173` | Allowed CORS origins |
 
 ### Agent (`agent/.env`)
 
@@ -131,7 +115,9 @@ docker compose down
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_API_BASE` | `http://localhost:8000` | Backend API base URL (baked into the frontend build) |
+| `VITE_LIVEKIT_URL` | `ws://localhost:7880` | LiveKit WebSocket URL used by the browser |
+| `VITE_LIVEKIT_API_KEY` | `devkey` | LiveKit API key (baked into the frontend build) |
+| `VITE_LIVEKIT_API_SECRET` | `devsecret` | LiveKit API secret (baked into the frontend build) |
 
 ---
 
@@ -146,8 +132,8 @@ chorus/
 │       ├── Join.tsx            # Room join form
 │       ├── InterviewRoom.tsx   # Video conference view
 │       ├── TranscriptPanel.tsx # Live transcript display
-│       └── api.ts              # Backend API client
-├── backend/            # FastAPI token service
+│       └── api.ts              # In-browser JWT generator
+├── backend/            # FastAPI token service (not used for POC)
 │   ├── Dockerfile
 │   └── app/
 │       └── main.py             # Token generation endpoint
@@ -156,7 +142,7 @@ chorus/
 │   ├── run_agent.py            # Agent entry point
 │   ├── stt_faster_whisper.py  # Whisper STT wrapper
 │   └── tts_piper.py           # Piper TTS wrapper
-├── docker-compose.yml  # All four services
+├── docker-compose.yml  # LiveKit, agent, and frontend
 ├── livekit.yaml        # LiveKit configuration
 └── start.sh            # Convenience wrapper for docker compose up --build
 ```
