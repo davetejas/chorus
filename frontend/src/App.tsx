@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Join } from './Join';
 import { generateToken } from './api';
-import { InterviewRoom } from './InterviewRoom';
+import { OnboardRoom } from './OnboardRoom';
 
 export default function App() {
   const [room, setRoom] = useState('demo');
@@ -41,7 +41,7 @@ export default function App() {
   }
 
   return (
-    <InterviewRoom
+    <OnboardRoom
       token={token}
       serverUrl={serverUrl}
       onLeave={() => {
@@ -51,3 +51,4 @@ export default function App() {
     />
   );
 }
+
