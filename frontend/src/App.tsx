@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Join } from './Join';
-import { fetchToken } from './api';
+import { generateToken } from './api';
 import { InterviewRoom } from './InterviewRoom';
 
 export default function App() {
@@ -16,7 +16,7 @@ export default function App() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetchToken(room, name);
+      const res = await generateToken(room, name, name);
       setToken(res.token);
       setServerUrl(res.url);
     } catch (e: any) {

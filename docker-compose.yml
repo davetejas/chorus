@@ -9,16 +9,6 @@ services:
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro
 
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    env_file: ./backend/.env
-    environment:
-      - LIVEKIT_URL=ws://livekit:7880
-    depends_on:
-      - livekit
-
   agent:
     build: ./agent
     env_file: ./agent/.env
@@ -36,11 +26,11 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE: http://localhost:8000
+        VITE_LIVEKIT_URL: ws://localhost:7880
     ports:
       - "5173:80"
     depends_on:
-      - backend
+      - livekit
 
 volumes:
   piper-models:
