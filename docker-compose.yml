@@ -8,3 +8,39 @@ services:
       - "7882:7882/udp"   # RTC UDP
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: ./backend/.env
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+    depends_on:
+      - livekit
+
+  agent:
+    build: ./agent
+    env_file: ./agent/.env
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - piper-models:/root/.local/share/piper
+    depends_on:
+      - livekit
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: http://localhost:8000
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  piper-models:

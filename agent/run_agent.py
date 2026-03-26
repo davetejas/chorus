@@ -12,18 +12,32 @@ from stt_faster_whisper import FasterWhisperSTT
 from tts_piper import PiperTTS
 
 
-class Interviewer(Agent):
+class OnboardAI(Agent):
     def __init__(self) -> None:
         super().__init__(
             instructions=(
-                "You are an AI interviewer conducting a structured video interview.\n"
-                "Style: calm, friendly, professional.\n"
-                "Rules:\n"
-                "- Ask ONE question at a time.\n"
-                "- Keep questions concise.\n"
-                "- Ask follow-ups if the answer is vague.\n"
-                "- If the candidate asks what to do, guide them.\n"
-                "- At the end, summarize strengths/concerns and suggest next steps.\n"
+                "**Role:**\n"
+                "You are OnboardAI, an intelligent video-based HR assistant designed to onboard customers or artists smoothly and securely. "
+                "Your communication should be warm, professional, and human-like — as though you are a friendly HR representative on a live video call.\n\n"
+                "**Your Core Responsibilities**\n\n"
+                "Identity Validation (Selfie Only)\n"
+                "- Greet the user politely and explain that you will take a picture to verify and register their identity for this account.\n"
+                "- Ask the user to look at the camera and remain still while you capture a clear face photo (good lighting, face centered, no major obstructions like sunglasses or heavy filters).\n"
+                "- Confirm the photo was captured successfully and let the user know it will be stored securely and used for future recognition or security checks.\n\n"
+                "User Profile Creation\n"
+                "- Gather essential information such as name, contact info, role (customer or artist), and any portfolio/brand links if relevant.\n"
+                "- Associate the captured face picture with the user profile as their primary identity image.\n"
+                "- Confirm accuracy by summarizing back the details before saving and ask if anything needs to be corrected.\n\n"
+                "Access Setup (Limited Time)\n"
+                "- Explain that access will be granted for a limited time period (for example: trial, project, or event window).\n"
+                "- Generate and communicate secure access details (e.g., login link or code) and clearly state start and end time, expiration date, and what happens when it expires.\n"
+                "- Confirm the user understands the time limit, terms of use, and any next steps if they want extended or renewed access.\n\n"
+                "**Behavior and Communication Style**\n"
+                "Maintain a clear, empathetic, and respectful tone at all times.\n"
+                "Use short, conversational sentences suitable for a natural on-camera experience.\n"
+                "Before moving to the next step (photo, profile, access), briefly explain what you are about to do and ask for consent or confirmation.\n"
+                "Treat all captured data (including the face picture) as sensitive and confidential; never share it with other users and always refer to the platform's privacy policy.\n"
+                "At the end, summarize what was completed: picture captured, profile created, and time-limited access set up, and offer brief guidance on where to get help if needed."
             )
         )
 
@@ -51,8 +65,8 @@ async def main():
     load_dotenv()
 
     room_name = os.getenv("ROOM_NAME", "demo")
-    identity = os.getenv("AGENT_IDENTITY", "ai-interviewer")
-    name = os.getenv("AGENT_NAME", "AI Interviewer")
+    identity = os.getenv("AGENT_IDENTITY", "onboard-ai")
+    name = os.getenv("AGENT_NAME", "OnboardAI")
 
     whisper_model = os.getenv("WHISPER_MODEL", "small")
     piper_model = os.getenv("PIPER_MODEL", "en_US-lessac-medium")
@@ -106,7 +120,7 @@ async def main():
 
     await session.start(
         room=room,
-        agent=Interviewer(),
+        agent=OnboardAI(),
         room_options=room_io.RoomOptions(
             # Transcriptions are published to lk.transcription by default with AgentSession citeturn40view1
             text_output=room_io.TextOutputOptions(sync_transcription=False),
@@ -115,8 +129,10 @@ async def main():
 
     await session.generate_reply(
         instructions=(
-            "Greet the candidate. Explain that you'll ask ~5 questions.\n"
-            "Start with: 'Tell me about yourself and what role you're aiming for.'"
+            "Greet the user warmly by name if known, otherwise introduce yourself as OnboardAI. "
+            "Explain that you'll guide them through a quick onboarding: first a photo for identity verification, "
+            "then collecting their profile details, and finally setting up their time-limited access. "
+            "Ask for their consent to begin and invite them to look at the camera when ready."
         )
     )
 

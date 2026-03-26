@@ -1,6 +1,6 @@
-# Chorus
+# Chorus — OnboardAI
 
-An AI-powered video interview platform. A human candidate joins a video room and is interviewed in real-time by an AI agent — fully local, no cloud AI APIs required.
+An AI-powered video onboarding platform. A user joins a video room and is guided through identity verification, profile creation, and time-limited access setup by an AI agent — fully local, no cloud AI APIs required.
 
 > **Status:** Proof of concept
 
@@ -10,12 +10,12 @@ An AI-powered video interview platform. A human candidate joins a video room and
 
 Chorus orchestrates three services around a LiveKit real-time video server:
 
-- **Frontend** — React/TypeScript SPA where candidates join a named room and see a live transcript
+- **Frontend** — React/TypeScript SPA where users join a named room and see a live transcript
 - **Backend** — Minimal FastAPI service that issues LiveKit access tokens
-- **Agent** — Python process that joins the same room and conducts the interview using local STT, LLM, and TTS models
+- **Agent** — Python process (OnboardAI) that joins the same room and conducts the onboarding session using local STT, LLM, and TTS models
 
 ```
-Candidate browser
+User browser
       │  WebRTC (audio/video)
       ▼
 ┌─────────────┐   token request   ┌──────────────┐
@@ -30,7 +30,7 @@ Candidate browser
       ▲  WebRTC (audio/text streams)
       │
 ┌─────────────┐
-│    Agent    │
+│  OnboardAI  │
 │   Python    │
 │  Whisper STT│
 │  Ollama LLM │
@@ -53,12 +53,10 @@ Candidate browser
 
 ## Prerequisites
 
-- **Node.js** 18+ and npm
-- **Python** 3.10+
 - **Docker** and Docker Compose
-- **Ollama** running locally with a model pulled (e.g. `llama3.1`)
-- **Piper TTS** CLI installed and on `$PATH` — [install instructions](https://github.com/rhasspy/piper)
-- A Piper voice model — the default is `en_US-lessac-medium` (`.onnx` + `.onnx.json` files in `agent/`)
+- **Ollama** running locally with a model pulled (e.g. `ollama pull llama3.1`)
+
+No local Python or Node.js installation is required — all services run inside Docker containers.
 
 ---
 
@@ -68,49 +66,38 @@ Candidate browser
 ./start.sh
 ```
 
-[start.sh](start.sh) handles first-time setup (creates venvs, installs deps, copies `.env` files) and starts all four services in the background.
+Or directly:
 
-Open [http://localhost:5173](http://localhost:5173), enter a name and room name, and click **Join**.
+```bash
+docker compose up --build -d
+```
+
+Open [http://localhost:5173](http://localhost:5173), enter your name and a room name, and click **Start onboarding**.
+
+To stop all services:
+
+```bash
+docker compose down
+```
 
 ---
 
-### Manual setup
+## How It Works
 
-<details>
-<summary>Expand if you prefer to run each service individually</summary>
-
-#### 1. LiveKit
-
-```bash
-docker-compose up -d
-```
-
-#### 2. Backend
-
-```bash
-cd backend && cp .env.example .env
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-#### 3. Agent
-
-```bash
-cd agent && cp .env.example .env
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python run_agent.py
-```
-
-#### 4. Frontend
-
-```bash
-cd frontend && cp .env.example .env
-npm install && npm run dev
-```
-
-</details>
+1. The user enters their name and a room name in the frontend and clicks **Start onboarding**.
+2. The frontend calls `POST /api/token` on the backend to get a short-lived LiveKit JWT.
+3. The frontend connects to LiveKit and publishes the user's audio/video.
+4. The OnboardAI agent (already running) detects the new participant and joins the same room.
+5. The agent pipeline runs continuously:
+   - **Silero VAD** detects when the user finishes speaking
+   - **faster-whisper** transcribes the audio to text
+   - **Ollama LLM** generates the agent's response
+   - **Piper TTS** converts the response to speech and plays it back
+6. The agent guides the user through three onboarding steps:
+   - **Identity verification** — asks the user to face the camera for a photo
+   - **Profile creation** — collects name, contact info, role, and portfolio/brand links
+   - **Access setup** — explains and confirms time-limited access details
+7. Both sides publish text stream segments; the frontend's **TranscriptPanel** displays them in real-time.
 
 ---
 
@@ -129,14 +116,14 @@ npm install && npm run dev
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit WebSocket URL |
+| `LIVEKIT_URL` | `ws://localhost:7880` | LiveKit WebSocket URL (overridden to `ws://livekit:7880` inside Docker) |
 | `LIVEKIT_API_KEY` | `devkey` | LiveKit API key |
 | `LIVEKIT_API_SECRET` | `devsecret` | LiveKit API secret |
 | `ROOM_NAME` | `demo` | Room the agent joins |
-| `AGENT_IDENTITY` | `ai-interviewer` | Agent participant identity |
-| `AGENT_NAME` | `AI Interviewer` | Display name |
+| `AGENT_IDENTITY` | `onboard-ai` | Agent participant identity |
+| `AGENT_NAME` | `OnboardAI` | Display name |
 | `OLLAMA_MODEL` | `llama3.1` | Ollama model to use |
-| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama OpenAI-compatible endpoint |
+| `OLLAMA_BASE_URL` | `http://localhost:11434/v1` | Ollama OpenAI-compatible endpoint (overridden to `host.docker.internal` inside Docker) |
 | `WHISPER_MODEL` | `small` | faster-whisper model size (`tiny`/`base`/`small`/`medium`/`large-v3`) |
 | `PIPER_MODEL` | `en_US-lessac-medium` | Piper voice name or path to `.onnx` file |
 
@@ -144,24 +131,7 @@ npm install && npm run dev
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_API_BASE` | `http://localhost:8000` | Backend API base URL |
-
----
-
-## How It Works
-
-1. The candidate enters their name and a room name in the frontend and clicks **Join**.
-2. The frontend calls `POST /api/token` on the backend to get a short-lived LiveKit JWT.
-3. The frontend connects to LiveKit and publishes the candidate's audio/video.
-4. The agent process (already running) detects the new participant and joins the same room.
-5. The agent pipeline runs continuously:
-   - **Silero VAD** detects when the candidate finishes speaking
-   - **faster-whisper** transcribes the audio to text
-   - **Ollama LLM** generates the interviewer's response
-   - **Piper TTS** converts the response to speech and plays it back
-6. Both sides publish text stream segments; the frontend's **TranscriptPanel** displays them in real-time.
-
-The agent conducts a structured 5-question interview, probes vague answers, and summarizes strengths and concerns at the end.
+| `VITE_API_BASE` | `http://localhost:8000` | Backend API base URL (baked into the frontend build) |
 
 ---
 
@@ -170,6 +140,7 @@ The agent conducts a structured 5-question interview, probes vague answers, and 
 ```
 chorus/
 ├── frontend/           # React/TypeScript SPA
+│   ├── Dockerfile
 │   └── src/
 │       ├── App.tsx             # App state and routing
 │       ├── Join.tsx            # Room join form
@@ -177,14 +148,17 @@ chorus/
 │       ├── TranscriptPanel.tsx # Live transcript display
 │       └── api.ts              # Backend API client
 ├── backend/            # FastAPI token service
+│   ├── Dockerfile
 │   └── app/
 │       └── main.py             # Token generation endpoint
-├── agent/              # LiveKit AI agent
+├── agent/              # LiveKit AI agent (OnboardAI)
+│   ├── Dockerfile
 │   ├── run_agent.py            # Agent entry point
 │   ├── stt_faster_whisper.py  # Whisper STT wrapper
 │   └── tts_piper.py           # Piper TTS wrapper
-├── docker-compose.yml  # LiveKit server
-└── livekit.yaml        # LiveKit configuration
+├── docker-compose.yml  # All four services
+├── livekit.yaml        # LiveKit configuration
+└── start.sh            # Convenience wrapper for docker compose up --build
 ```
 
 ---

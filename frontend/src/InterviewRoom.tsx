@@ -34,7 +34,7 @@ export function InterviewRoom(props: {
         </div>
 
         <p className="small" style={{ marginTop: 12, opacity: 0.75 }}>
-          If you don’t hear the agent, confirm the agent process joined the same room and your browser audio is enabled.
+          If you don’t hear OnboardAI, confirm the agent container is running and joined the same room, and that your browser audio is enabled.
         </p>
       </div>
     </LiveKitRoom>

@@ -11,9 +11,9 @@ export function Join(props: {
 }) {
   return (
     <div className="container">
-      <h1>AI Video Interview (POC)</h1>
+      <h1>Customer Onboarding</h1>
       <p className="small">
-        Candidate joins with video/audio. A Python agent joins the same LiveKit room and interviews you.
+        Join with video and audio. OnboardAI will guide you through identity verification, profile setup, and access configuration.
       </p>
 
       <div className="card" style={{ maxWidth: 520 }}>
@@ -28,7 +28,7 @@ export function Join(props: {
         <div style={{ height: 16 }} />
 
         <button className="btn" onClick={props.onJoin} disabled={props.busy || !props.room || !props.name}>
-          {props.busy ? 'Joining…' : 'Join interview'}
+          {props.busy ? 'Joining…' : 'Start onboarding'}
         </button>
 
         {props.error ? (
@@ -36,7 +36,7 @@ export function Join(props: {
         ) : null}
 
         <p className="small" style={{ marginTop: 12 }}>
-          Tip: start the agent with <code>ROOM_NAME</code> set to the same room.
+          Ensure OnboardAI is running and set to the same room name.
         </p>
       </div>
     </div>
