@@ -5,7 +5,7 @@ import { InterviewRoom } from './InterviewRoom';
 
 export default function App() {
   const [room, setRoom] = useState('demo');
-  const [name, setName] = useState('Candidate');
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 

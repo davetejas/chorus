@@ -87,15 +87,15 @@ async def main():
         disconnected.set()
 
     print(f"[agent] connecting to room={room_name} as {identity} ...")
-    await room.connect(livekit_url, token)  # Room is the base LiveKit connection object citeturn30search7turn30search10
+    await room.connect(livekit_url, token)
 
     # Build open-source pipeline components
-    vad = silero.VAD.load()  # requires plugin + model weights citeturn42view1turn42view0
+    vad = silero.VAD.load()
     stt = FasterWhisperSTT(model_size=whisper_model)
     tts = PiperTTS(piper_model=piper_model)
 
     # Ollama via OpenAI-compatible API helper
-    llm = openai.with_ollama(model=ollama_model, base_url=ollama_base_url)  # citeturn15search0turn15search3
+    llm = openai.with_ollama(model=ollama_model, base_url=ollama_base_url)
 
     session = AgentSession(
         vad=vad,
@@ -122,7 +122,6 @@ async def main():
         room=room,
         agent=OnboardAI(),
         room_options=room_io.RoomOptions(
-            # Transcriptions are published to lk.transcription by default with AgentSession citeturn40view1
             text_output=room_io.TextOutputOptions(sync_transcription=False),
         ),
     )
